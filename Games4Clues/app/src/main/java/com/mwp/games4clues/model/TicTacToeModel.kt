@@ -1,4 +1,5 @@
-package com.mwp.games4clues.model
+import com.mwp.games4clues.model.GameState
+import kotlin.random.Random
 
 data class TicTacToeModel(
     val board: List<List<String>> = List(3) { List(3) { "" } },
@@ -6,7 +7,6 @@ data class TicTacToeModel(
     val gameState: GameState = GameState.Ongoing,
     val winner: String? = null
 )
-
 
 class TicTacToeGame(private val level: Int) {
 
@@ -16,31 +16,62 @@ class TicTacToeGame(private val level: Int) {
 
     fun makePlayerMove(row: Int, col: Int): TicTacToeModel {
         if (state.board[row][col].isEmpty() && state.gameState == GameState.Ongoing) {
-            val newBoard = state.board.mapIndexed { r, rowList ->
-                rowList.mapIndexed { c, cell ->
-                    if (r == row && c == col) state.currentPlayer else cell
-                }
-            }
+            val newBoard = updateBoard(row, col, state.currentPlayer)
             val gameState = checkGameState(newBoard, state.currentPlayer)
             state = state.copy(board = newBoard, currentPlayer = "O", gameState = gameState)
+            if (level != 1 && state.gameState == GameState.Ongoing) {
+                makeComputerMove()
+            }
         }
         return state
     }
 
-    fun makeComputerMove(): TicTacToeModel {
-        if (state.gameState == GameState.Ongoing) {
-            val move = findBestMove(state.board)
-            move?.let {
-                val newBoard = state.board.mapIndexed { r, rowList ->
-                    rowList.mapIndexed { c, cell ->
-                        if (r == it.first && c == it.second) "O" else cell
-                    }
-                }
-                val gameState = checkGameState(newBoard, "O")
-                state = state.copy(board = newBoard, currentPlayer = "X", gameState = gameState)
+    private fun updateBoard(row: Int, col: Int, player: String): List<List<String>> {
+        return state.board.mapIndexed { r, rowList ->
+            rowList.mapIndexed { c, cell ->
+                if (r == row && c == col) player else cell
             }
         }
-        return state
+    }
+
+    fun makeComputerMove() {
+        when (level) {
+            1 -> makeRandomMove()
+            2 -> makeSmartMove()
+            3 -> makePerfectMove()
+        }
+        state = state.copy(currentPlayer = "X")
+    }
+
+    private fun makeRandomMove() {
+        val emptyCells = mutableListOf<Pair<Int, Int>>()
+        state.board.forEachIndexed { r, row ->
+            row.forEachIndexed { c, cell ->
+                if (cell.isEmpty()) {
+                    emptyCells.add(Pair(r, c))
+                }
+            }
+        }
+        if (emptyCells.isNotEmpty()) {
+            val (row, col) = emptyCells.random()
+            val newBoard = updateBoard(row, col, "O")
+            val gameState = checkGameState(newBoard, "O")
+            state = state.copy(board = newBoard, gameState = gameState)
+        }
+    }
+
+    private fun makeSmartMove() {
+        // Implement logic for medium difficulty (if needed)
+        makeRandomMove()
+    }
+
+    private fun makePerfectMove() {
+        val bestMove = findBestMove(state.board)
+        bestMove?.let {
+            val newBoard = updateBoard(it.first, it.second, "O")
+            val gameState = checkGameState(newBoard, "O")
+            state = state.copy(board = newBoard, gameState = gameState)
+        }
     }
 
     private fun findBestMove(board: List<List<String>>): Pair<Int, Int>? {
@@ -50,11 +81,7 @@ class TicTacToeGame(private val level: Int) {
         for (i in board.indices) {
             for (j in board[i].indices) {
                 if (board[i][j].isEmpty()) {
-                    val newBoard = board.mapIndexed { r, rowList ->
-                        rowList.mapIndexed { c, cell ->
-                            if (r == i && c == j) "O" else cell
-                        }
-                    }
+                    val newBoard = updateBoard(i, j, "O")
                     val score = minimax(newBoard, 0, false)
                     if (score > bestScore) {
                         bestScore = score
@@ -80,11 +107,7 @@ class TicTacToeGame(private val level: Int) {
             for (i in board.indices) {
                 for (j in board[i].indices) {
                     if (board[i][j].isEmpty()) {
-                        val newBoard = board.mapIndexed { r, rowList ->
-                            rowList.mapIndexed { c, cell ->
-                                if (r == i && c == j) "O" else cell
-                            }
-                        }
+                        val newBoard = updateBoard(i, j, "O")
                         val score = minimax(newBoard, depth + 1, false)
                         bestScore = maxOf(bestScore, score)
                     }
@@ -96,11 +119,7 @@ class TicTacToeGame(private val level: Int) {
             for (i in board.indices) {
                 for (j in board[i].indices) {
                     if (board[i][j].isEmpty()) {
-                        val newBoard = board.mapIndexed { r, rowList ->
-                            rowList.mapIndexed { c, cell ->
-                                if (r == i && c == j) "X" else cell
-                            }
-                        }
+                        val newBoard = updateBoard(i, j, "X")
                         val score = minimax(newBoard, depth + 1, true)
                         bestScore = minOf(bestScore, score)
                     }

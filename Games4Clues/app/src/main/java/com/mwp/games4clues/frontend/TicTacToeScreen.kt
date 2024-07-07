@@ -1,66 +1,96 @@
 package com.mwp.games4clues.frontend
 
+import TicTacToeViewModel
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.mwp.games4clues.model.GameState
-import com.mwp.games4clues.viewmodel.HomeViewModel
-import com.mwp.games4clues.viewmodel.TicTacToeViewModel
-import com.mwp.games4clues.viewmodel.providers.TicTacToeViewModelFactory
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TicTacToeScreen(navController: NavController, level: Int, homeViewModel: HomeViewModel) {
-    val viewModel: TicTacToeViewModel = viewModel(
-        factory = TicTacToeViewModelFactory(level)
-    )
-    val state by viewModel.state.collectAsState()
+fun TicTacToeScreen(navController: NavController, level: Int, ticTacToeViewModel: TicTacToeViewModel = viewModel()) {
+    val gameState by ticTacToeViewModel.state.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        state.board.forEachIndexed { rowIndex, row ->
+        Text("Tic Tac Toe", style = MaterialTheme.typography.headlineLarge)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TicTacToeBoard(gameState.board) { row, col ->
+            ticTacToeViewModel.makePlayerMove(row, col)
+            if (gameState.gameState == GameState.Ongoing) {
+                ticTacToeViewModel.makeComputerMove()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (gameState.gameState) {
+            GameState.Ongoing -> {
+                Text("Current turn: ${gameState.currentPlayer}")
+            }
+            GameState.Win -> {
+                Text("${gameState.winner} wins!")
+                Button(onClick = { ticTacToeViewModel.resetGame() }) {
+                    Text("Play Again")
+                }
+            }
+            GameState.Tie -> {
+                Text("It's a tie!")
+                Button(onClick = { ticTacToeViewModel.resetGame() }) {
+                    Text("Play Again")
+                }
+            }
+            GameState.Loss -> {
+                Text("${gameState.winner} loses!")
+                Button(onClick = { ticTacToeViewModel.resetGame() }) {
+                    Text("Play Again")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TicTacToeBoard(board: List<List<String>>, onCellClick: (Int, Int) -> Unit) {
+    Column {
+        board.forEachIndexed { rowIndex, row ->
             Row {
                 row.forEachIndexed { colIndex, cell ->
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(4.dp),
-                        contentAlignment = Alignment.Center
+                    Button(
+                        onClick = { onCellClick(rowIndex, colIndex) },
+                        enabled = cell.isEmpty(),
+                        modifier = Modifier.size(80.dp)
                     ) {
-                        ClickableText(
-                            text = androidx.compose.ui.text.AnnotatedString(cell),
-                            onClick = { viewModel.makePlayerMove(rowIndex, colIndex) },
-                            style = androidx.compose.ui.text.TextStyle(fontSize = 24.sp)
-                        )
+                        Text(cell)
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        when (state.gameState) {
-            GameState.Win -> {
-                Text("Winner: ${state.winner}")
-                Button(onClick = { homeViewModel.unlockNextLevel(level) }) {
-                    Text("Next Level")
-                }
-            }
-            GameState.Tie -> {
-                Text("Game Over: Tie")
-                Button(onClick = { viewModel.resetGame() }) {
-                    Text("Restart")
-                }
-            }
-            else -> { /* Game is ongoing */ }
-        }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewTicTacToeScreen() {
+    TicTacToeScreen(navController = rememberNavController(), level = 1)
 }
