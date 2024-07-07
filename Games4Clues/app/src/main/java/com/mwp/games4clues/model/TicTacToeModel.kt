@@ -3,9 +3,10 @@ package com.mwp.games4clues.model
 data class TicTacToeModel(
     val board: List<List<String>> = List(3) { List(3) { "" } },
     val currentPlayer: String = "X",
-    val winner: String? = null,
-    val isGameOver: Boolean = false
+    val gameState: GameState = GameState.Ongoing,
+    val winner: String? = null
 )
+
 
 class TicTacToeGame(private val level: Int) {
 
@@ -14,35 +15,29 @@ class TicTacToeGame(private val level: Int) {
     fun getState(): TicTacToeModel = state
 
     fun makePlayerMove(row: Int, col: Int): TicTacToeModel {
-        if (state.board[row][col].isEmpty() && !state.isGameOver) {
+        if (state.board[row][col].isEmpty() && state.gameState == GameState.Ongoing) {
             val newBoard = state.board.mapIndexed { r, rowList ->
                 rowList.mapIndexed { c, cell ->
                     if (r == row && c == col) state.currentPlayer else cell
                 }
             }
-            val winner = checkWinner(newBoard)
-            state = if (winner != null || isBoardFull(newBoard)) {
-                state.copy(board = newBoard, winner = winner, isGameOver = true)
-            } else {
-                state.copy(board = newBoard, currentPlayer = "O")
-            }
+            val gameState = checkGameState(newBoard, state.currentPlayer)
+            state = state.copy(board = newBoard, currentPlayer = "O", gameState = gameState)
         }
         return state
     }
 
     fun makeComputerMove(): TicTacToeModel {
-        val move = findBestMove(state.board)
-        move?.let {
-            val newBoard = state.board.mapIndexed { r, rowList ->
-                rowList.mapIndexed { c, cell ->
-                    if (r == it.first && c == it.second) "O" else cell
+        if (state.gameState == GameState.Ongoing) {
+            val move = findBestMove(state.board)
+            move?.let {
+                val newBoard = state.board.mapIndexed { r, rowList ->
+                    rowList.mapIndexed { c, cell ->
+                        if (r == it.first && c == it.second) "O" else cell
+                    }
                 }
-            }
-            val winner = checkWinner(newBoard)
-            state = if (winner != null || isBoardFull(newBoard)) {
-                state.copy(board = newBoard, winner = winner, isGameOver = true)
-            } else {
-                state.copy(board = newBoard, currentPlayer = "X")
+                val gameState = checkGameState(newBoard, "O")
+                state = state.copy(board = newBoard, currentPlayer = "X", gameState = gameState)
             }
         }
         return state
@@ -72,10 +67,13 @@ class TicTacToeGame(private val level: Int) {
     }
 
     private fun minimax(board: List<List<String>>, depth: Int, isMaximizing: Boolean): Int {
-        val winner = checkWinner(board)
-        if (winner == "O") return 10 - depth
-        if (winner == "X") return depth - 10
-        if (isBoardFull(board)) return 0
+        val gameState = checkGameState(board, if (isMaximizing) "O" else "X")
+        when (gameState) {
+            GameState.Win -> return if (isMaximizing) 10 - depth else depth - 10
+            GameState.Loss -> return if (isMaximizing) depth - 10 else 10 - depth
+            GameState.Tie -> return 0
+            GameState.Ongoing -> {}
+        }
 
         return if (isMaximizing) {
             var bestScore = Int.MIN_VALUE
@@ -112,7 +110,7 @@ class TicTacToeGame(private val level: Int) {
         }
     }
 
-    private fun checkWinner(board: List<List<String>>): String? {
+    private fun checkGameState(board: List<List<String>>, currentPlayer: String): GameState {
         val lines = listOf(
             // Horizontal lines
             listOf(board[0][0], board[0][1], board[0][2]),
@@ -128,13 +126,17 @@ class TicTacToeGame(private val level: Int) {
         )
         for (line in lines) {
             if (line[0].isNotEmpty() && line[0] == line[1] && line[1] == line[2]) {
-                return line[0]
+                return if (line[0] == currentPlayer) GameState.Win else GameState.Loss
             }
         }
-        return null
+        return if (isBoardFull(board)) GameState.Tie else GameState.Ongoing
     }
 
     private fun isBoardFull(board: List<List<String>>): Boolean {
         return board.all { row -> row.all { cell -> cell.isNotEmpty() } }
+    }
+
+    fun reset() {
+        state = TicTacToeModel()
     }
 }

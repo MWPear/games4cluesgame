@@ -4,12 +4,13 @@ data class MemoryMatchGameState(
     val board: List<List<Card>> = emptyList(),
     val firstSelected: Pair<Int, Int>? = null,
     val secondSelected: Pair<Int, Int>? = null,
-    val matchesFound: Int = 0
+    val matchesFound: Int = 0,
+    val gameState: GameState = GameState.Ongoing
 )
 
 data class Card(val value: String, val isRevealed: Boolean = false, val isMatched: Boolean = false)
 
-class MemoryMatchModel(level: Int) {
+class MemoryMatchModel(private val level: Int) {
     private var state = MemoryMatchGameState(generateBoard(level))
 
     fun getState(): MemoryMatchGameState = state
@@ -47,6 +48,10 @@ class MemoryMatchModel(level: Int) {
         }
 
         return state
+    }
+
+    fun reset() {
+        state = MemoryMatchGameState(generateBoard(level))
     }
 
     private fun generateBoard(level: Int): List<List<Card>> {

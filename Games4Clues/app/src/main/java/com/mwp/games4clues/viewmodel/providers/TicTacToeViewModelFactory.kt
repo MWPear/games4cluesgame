@@ -13,4 +13,3 @@ class TicTacToeViewModelFactory(private val level: Int) : ViewModelProvider.Fact
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-

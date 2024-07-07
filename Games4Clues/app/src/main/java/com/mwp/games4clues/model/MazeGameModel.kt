@@ -2,41 +2,41 @@ package com.mwp.games4clues.model
 
 data class MazeGameState(
     val maze: List<List<Int>>,
-    val playerPosition: Pair<Int, Int>,
-    val endPosition: Pair<Int, Int>
+    val playerPosition: Pair<Int, Int> = Pair(0, 0),
+    val gameState: GameState = GameState.Ongoing
 )
 
-class MazeGameModel(private val mazeMatrix: List<List<Int>>) {
-    val start: Pair<Int, Int>
-    val end: Pair<Int, Int>
+class MazeGame(private val mazeMatrix: List<List<Int>>) {
+    private var state = MazeGameState(maze = mazeMatrix)
 
-    init {
-        start = findPosition(2)
-        end = findPosition(3)
-    }
+    fun getState(): MazeGameState = state
 
-    fun getInitialState(): MazeGameState {
-        return MazeGameState(maze = mazeMatrix, playerPosition = start, endPosition = end)
-    }
-
-    private fun findPosition(value: Int): Pair<Int, Int> {
-        for (rowIndex in mazeMatrix.indices) {
-            for (colIndex in mazeMatrix[rowIndex].indices) {
-                if (mazeMatrix[rowIndex][colIndex] == value) {
-                    return Pair(rowIndex, colIndex)
-                }
+    fun movePlayer(deltaRow: Int, deltaCol: Int): MazeGameState {
+        val newPosition = calculateNewPosition(state.playerPosition, deltaRow, deltaCol)
+        if (isValidMove(newPosition)) {
+            state = state.copy(playerPosition = newPosition)
+            if (newPosition == findEndPosition()) {
+                state = state.copy(gameState = GameState.Win)
             }
         }
-        throw IllegalArgumentException("Value $value not found in maze")
+        return state
     }
 
-    fun movePlayer(currentPosition: Pair<Int, Int>, deltaX: Int, deltaY: Int): Pair<Int, Int> {
-        val newX = currentPosition.first + deltaX
-        val newY = currentPosition.second + deltaY
-        return if (isValidMove(newX, newY)) Pair(newX, newY) else currentPosition
+    private fun calculateNewPosition(position: Pair<Int, Int>, deltaRow: Int, deltaCol: Int): Pair<Int, Int> {
+        return Pair(position.first + deltaRow, position.second + deltaCol)
     }
 
-    private fun isValidMove(x: Int, y: Int): Boolean {
-        return x in mazeMatrix.indices && y in mazeMatrix[x].indices && mazeMatrix[x][y] != 1
+    private fun isValidMove(position: Pair<Int, Int>): Boolean {
+        val (row, col) = position
+        return row in mazeMatrix.indices && col in mazeMatrix[0].indices && mazeMatrix[row][col] != 1
+    }
+
+    private fun findEndPosition(): Pair<Int, Int> {
+        mazeMatrix.forEachIndexed { rowIndex, row ->
+            row.forEachIndexed { colIndex, cell ->
+                if (cell == 3) return Pair(rowIndex, colIndex)
+            }
+        }
+        return Pair(-1, -1) // Default case, should not be reached if maze is valid
     }
 }
