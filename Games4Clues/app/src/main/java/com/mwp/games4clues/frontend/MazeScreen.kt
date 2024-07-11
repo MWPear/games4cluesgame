@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.mwp.games4clues.model.MazeGameState
+import com.mwp.games4clues.model.maze.MazeGameState
 import com.mwp.games4clues.viewmodel.HomeViewModel
 import com.mwp.games4clues.viewmodel.MazeViewModel
 

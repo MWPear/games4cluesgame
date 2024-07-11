@@ -1,27 +1,29 @@
 import androidx.lifecycle.ViewModel
+import com.mwp.games4clues.model.tictactoe.TicTacToeGameState
+import com.mwp.games4clues.model.tictactoe.TicTacToeModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
 class TicTacToeViewModel : ViewModel() {
 
-    private val _state = MutableStateFlow(TicTacToeModel())
-    val state: StateFlow<TicTacToeModel> = _state
+    private val _state = MutableStateFlow(TicTacToeGameState())
+    val state: StateFlow<TicTacToeGameState> = _state
 
-    private var ticTacToeGame: TicTacToeGame = TicTacToeGame(level = 1) // Default level is 1 (easy)
+    private var ticTacToeModel: TicTacToeModel = TicTacToeModel(level = 1) // Default level is 1 (easy)
 
     fun makePlayerMove(row: Int, col: Int) {
-        ticTacToeGame.makePlayerMove(row, col)
-        _state.update { ticTacToeGame.getState() }
+        ticTacToeModel.makePlayerMove(row, col)
+        _state.update { ticTacToeModel.getState() }
     }
 
     fun makeComputerMove() {
-        ticTacToeGame.makeComputerMove()
-        _state.update { ticTacToeGame.getState() }
+        ticTacToeModel.makeComputerMove()
+        _state.update { ticTacToeModel.getState() }
     }
 
     fun resetGame() {
-        ticTacToeGame.reset()
-        _state.update { ticTacToeGame.getState() }
+        ticTacToeModel.reset()
+        _state.update { ticTacToeModel.getState() }
     }
 }

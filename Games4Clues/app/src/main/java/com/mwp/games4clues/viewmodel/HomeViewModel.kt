@@ -1,39 +1,61 @@
 package com.mwp.games4clues.viewmodel
 
-import androidx.lifecycle.ViewModel
-import com.mwp.games4clues.Screen
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
+import com.mwp.games4clues.model.GameLevel
+import com.mwp.games4clues.model.GameLevelsList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class HomeViewModel : ViewModel() {
-    private val _levels = MutableStateFlow(
-        listOf(
-            GameLevel("Play Tic Tac Toe - Level 1", Screen.TicTacToe.createRoute(1), 1, true),
-            GameLevel("Play Tic Tac Toe - Level 2", Screen.TicTacToe.createRoute(2), 2, false),
-            GameLevel("Play Maze - Level 1", Screen.Maze.createRoute(1), 1, true),
-            GameLevel("Play Maze - Level 2", Screen.Maze.createRoute(2), 2, false),
-            GameLevel("Play Memory Match - Level 1", Screen.MemoryMatch.createRoute(1), 1, true),
-            GameLevel("Play Memory Match - Level 2", Screen.MemoryMatch.createRoute(2), 2, false),
-            GameLevel("Solve Riddle", Screen.Riddle.route, 1, true)
-        )
-    )
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
+    private val sharedPreferences = application.getSharedPreferences("game_prefs", Context.MODE_PRIVATE)
+    private val _levels = MutableStateFlow(GameLevelsList().levels)
     val levels: StateFlow<List<GameLevel>> get() = _levels
 
+    init {
+        loadUnlockedLevels()
+    }
+
+    private fun loadUnlockedLevels() {
+        val unlockedLevels = sharedPreferences.getStringSet("unlocked_levels", emptySet())
+        val updatedLevels = _levels.value.map { level ->
+            level.copy(isUnlocked = unlockedLevels?.contains(level.route) == true || level.isUnlocked)
+        }
+        _levels.value = updatedLevels
+    }
+
     fun unlockNextLevel(currentLevel: Int) {
-        val newLevels = _levels.value.map {
-            if (it.level == currentLevel + 1) {
-                it.copy(isUnlocked = true)
+        val currentLevelIndex = _levels.value.indexOfFirst { it.level == currentLevel }
+        if (currentLevelIndex != -1 && currentLevelIndex < _levels.value.size - 1) {
+            val updatedLevels = _levels.value.mapIndexed { index, level ->
+                if (index == currentLevelIndex + 1) {
+                    level.copy(isUnlocked = true)
+                } else {
+                    level
+                }
+            }
+            _levels.value = updatedLevels
+            saveUnlockedLevels()
+        }
+    }
+
+    fun unlockLevelManually(levelRoute: String) {
+        val updatedLevels = _levels.value.map { level ->
+            if (level.route == levelRoute) {
+                level.copy(isUnlocked = true)
             } else {
-                it
+                level
             }
         }
-        _levels.value = newLevels
+        _levels.value = updatedLevels
+        saveUnlockedLevels()
+    }
+
+    private fun saveUnlockedLevels() {
+        val unlockedLevels = _levels.value.filter { it.isUnlocked }.map { it.route }.toSet()
+        sharedPreferences.edit().putStringSet("unlocked_levels", unlockedLevels).apply()
     }
 }
 
-data class GameLevel(
-    val name: String,
-    val route: String,
-    val level: Int,
-    val isUnlocked: Boolean
-)
+

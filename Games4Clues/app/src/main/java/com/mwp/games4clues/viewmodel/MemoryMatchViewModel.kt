@@ -1,11 +1,10 @@
 package com.mwp.games4clues.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.mwp.games4clues.model.GameState
-import com.mwp.games4clues.model.MemoryMatchModel
-import com.mwp.games4clues.model.MemoryMatchGameState
+import com.mwp.games4clues.model.memorymatch.MemoryMatchModel
+import com.mwp.games4clues.model.memorymatch.MemoryMatchGameState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

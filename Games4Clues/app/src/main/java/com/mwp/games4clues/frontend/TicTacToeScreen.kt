@@ -17,10 +17,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.mwp.games4clues.model.GameState
+import com.mwp.games4clues.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TicTacToeScreen(navController: NavController, level: Int, ticTacToeViewModel: TicTacToeViewModel = viewModel()) {
+fun TicTacToeScreen(navController: NavController,
+                    level: Int,
+                    ticTacToeViewModel: TicTacToeViewModel = viewModel(),
+                    homeViewModel: HomeViewModel = viewModel(),
+) {
     val gameState by ticTacToeViewModel.state.collectAsState()
 
     Column(
@@ -48,10 +53,11 @@ fun TicTacToeScreen(navController: NavController, level: Int, ticTacToeViewModel
                 Text("Current turn: ${gameState.currentPlayer}")
             }
             GameState.Win -> {
-                Text("${gameState.winner} wins!")
+                Text("You win!")
                 Button(onClick = { ticTacToeViewModel.resetGame() }) {
                     Text("Play Again")
                 }
+                homeViewModel.unlockNextLevel(level)
             }
             GameState.Tie -> {
                 Text("It's a tie!")
@@ -60,7 +66,7 @@ fun TicTacToeScreen(navController: NavController, level: Int, ticTacToeViewModel
                 }
             }
             GameState.Loss -> {
-                Text("${gameState.winner} loses!")
+                Text("You lose!")
                 Button(onClick = { ticTacToeViewModel.resetGame() }) {
                     Text("Play Again")
                 }
